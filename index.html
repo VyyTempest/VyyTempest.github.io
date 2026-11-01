@@ -1272,9 +1272,7 @@ waitForThree(performance.now()+12000);
    metric("DOWNLOAD CLICKS","live-downloading"),
    metric("TOTAL DOWNLOADS","live-total-downloads")
   );
-  strip.append(make("span","live-connection",
-   "Download totals use GitHub Releases. Live visitor presence needs a Realtime project."
-  ));
+  /* Keep the status area clean; no setup message is shown to visitors. */
   const steps=doc.getElementById("steps");
   if(steps)steps.after(strip);
   else updates.append(strip);
@@ -1322,6 +1320,13 @@ waitForThree(performance.now()+12000);
  const configured=
   /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(LIVE_CONFIG.supabaseUrl)&&
   LIVE_CONFIG.publishableKey.length>20;
+ const liveStrip=doc.getElementById("community-live");
+ if(liveStrip){
+  const onlineMetric=doc.getElementById("live-online");
+  const downloadMetric=doc.getElementById("live-downloading");
+  if(onlineMetric&&onlineMetric.parentElement)onlineMetric.parentElement.hidden=true;
+  if(downloadMetric&&downloadMetric.parentElement)downloadMetric.parentElement.hidden=true;
+ }
  const onlineNode=doc.getElementById("live-online");
  const downloadingNode=doc.getElementById("live-downloading");
  let presenceChannel=null,resetDownloadTimer=0;
@@ -1388,10 +1393,14 @@ waitForThree(performance.now()+12000);
  const start=()=>{
   updateDownloadTotal();
   window.setInterval(updateDownloadTotal,300000);
-  if(configured)connectPresence();
-  else if(connectionNode){
-   connectionNode.textContent=
-    "GitHub download totals are live. Add a Supabase URL and publishable key to activate live visitor presence.";
+  if(configured){
+   if(onlineNode&&onlineNode.parentElement)onlineNode.parentElement.hidden=false;
+   if(downloadingNode&&downloadingNode.parentElement)downloadingNode.parentElement.hidden=false;
+   connectPresence();
+  }else{
+   /* Only show metrics we can genuinely populate before Supabase is connected. */
+   if(onlineNode&&onlineNode.parentElement)onlineNode.parentElement.hidden=true;
+   if(downloadingNode&&downloadingNode.parentElement)downloadingNode.parentElement.hidden=true;
   }
  };
  if("requestIdleCallback" in window)requestIdleCallback(start,{timeout:1800});
