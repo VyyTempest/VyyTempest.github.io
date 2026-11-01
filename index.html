@@ -270,6 +270,7 @@ section{
 section>*{max-width:54rem}
 section>.wide{max-width:82rem}
 .hero{
+  text-align:left;
   min-height:100svh;
   padding-top:clamp(8rem,17vh,13rem);
   padding-bottom:clamp(5.5rem,10vh,9rem);
@@ -289,6 +290,8 @@ section>.wide{max-width:82rem}
   content:"";width:2.4rem;height:1px;background:var(--ember);
 }
 #title{
+  position:relative;left:auto;right:auto;top:auto;transform:none;
+  display:block;pointer-events:auto;text-align:left;
   max-width:9ch;
   margin:.95rem 0 1rem;
   color:var(--bone);
