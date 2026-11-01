@@ -970,7 +970,7 @@ function scene3d(){
     const mxs=document.documentElement.scrollHeight-innerHeight,tp=Math.min(1,scrollY/ye),tw=mxs>ye?Math.min(1,Math.max(0,(scrollY-ye)/(mxs-ye))):0;
     if(rm){sp=tp;sw=tw}else{const W=6.5;spv+=(W*W*(tp-sp)-2*W*spv)*dt;sp=Math.min(1,Math.max(0,sp+spv*dt));swv+=(W*W*(tw-sw)-2*W*swv)*dt;sw=Math.min(1,Math.max(0,sw+swv*dt))}smx+=(mx-smx)*(1-Math.pow(.02,dt));smy+=(my-smy)*(1-Math.pow(.02,dt));
     const a=ss(0,.7,sp),b=ss(.55,.79,sp),c=ss(0,1,sw),p=Math.max(ss(.1,.65,sp),sg*.9),z=15-21*ss(0,1,sp)-35*sw,zi=z+(1-ss(.9,4,t))*5*k;gPb=b;
-    C.position.set(smx*.8*(1-b)+Math.sin(t*.4)*.08*k+(Math.random()-.5)*.06*sg*k-(coarse?1.25:3.35),3.1+(1-a)*.7+smy*.3+Math.sin(t*.9)*.05*k,zi);C.lookAt(smx*.5-(coarse?1.25:3.35),3.2+smy*.3,zi-10);C.rotation.z+=Math.sin(t*.5)*.012*(1-b)*k+Math.sin(Math.PI*b)*.07*k;
+    C.position.set(smx*.8*(1-b)+Math.sin(t*.4)*.08*k+(Math.random()-.5)*.06*sg*k,3.1+(1-a)*.7+smy*.3+Math.sin(t*.9)*.05*k,zi);C.lookAt(smx*.5-(coarse?1.0:2.8),3.2+smy*.3,zi-10);C.rotation.z+=Math.sin(t*.5)*.012*(1-b)*k+Math.sin(Math.PI*b)*.07*k;
     C.fov=bf+Math.sin(Math.PI*b)*24*k;C.updateProjectionMatrix();orb.rotation.z=t*.14*k;eyes.forEach((e,i)=>{e[0].visible=e[1].visible=((t*.35+i*1.3)%5)>.14});sv.rotation.z=Math.sin(t*.7)*.015*k;ll.intensity=ig*(.8+k*.15*Math.sin(t*9));ch.forEach(m=>m.rotation.z=Math.sin(t*.5+m.userData.ph)*.03*k);spill.material.opacity=p*.45;
     if(!rm){const sd=.5+p*2.2;for(let i=0;i<VN;i++){const q=vs[i];q.r-=q.sp*dt*sd;q.th+=dt*(1.1+p*2.6)/(q.r+.6);if(q.r<.15){q.r=3.4+Math.random()*1.2;q.th=Math.random()*6.283}vp[i*3]=Math.cos(q.th)*q.r;vp[i*3+1]=3.4+Math.sin(q.th)*q.r;vp[i*3+2]=.25+q.r*.09}vg.attributes.position.needsUpdate=true;
       if((p>.55&&pPrev<=.55)||(p>.5&&(t%5)<dt)||(sgT&&!sgP))wave=0}
