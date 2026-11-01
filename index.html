@@ -1294,7 +1294,7 @@ waitForThree(performance.now()+12000);
    item.append(make("span","",label+" "),make("strong","live-value","—"));
    item.lastChild.id=id;return item;
   };
-  strip.append(heading,metric("ONLINE","live-online"),metric("DOWNLOADING","live-downloading"),metric("TOTAL DOWNLOADS","live-total-downloads"));
+  strip.append(heading,metric("ONLINE","live-online"),metric("DOWNLOAD CLICKS","live-downloading"),metric("TOTAL DOWNLOADS","live-total-downloads"));
   const connection=make("span","live-connection","Download totals connect to GitHub; live presence needs a Realtime project.");
   strip.append(connection);
   const actions=hero.querySelector(".hero-actions");
@@ -1335,7 +1335,7 @@ waitForThree(performance.now()+12000);
  async function updateDownloadTotal(){
   try{
    const cached=JSON.parse(localStorage.getItem(cacheKey)||"null");
-   if(cached&&Date.now()-cached.at<120000){renderTotal(cached.total);return}
+   if(cached&&Date.now()-cached.at<300000){renderTotal(cached.total);return}
   }catch(error){}
   try{
    const response=await fetch(apiUrl,{headers:{Accept:"application/vnd.github+json"},cache:"no-store"});
@@ -1375,7 +1375,7 @@ waitForThree(performance.now()+12000);
 
    const renderPresence=()=>{
     const entries=Object.values(presenceChannel.presenceState()).flat();
-    const active=entries.filter(p=>p&&p.mode==="downloading"&&Date.now()-Number(p.updatedAt||0)<65000).length;
+    const active=entries.filter(p=>p&&p.mode==="download-click"&&Date.now()-Number(p.updatedAt||0)<65000).length;
     if(onlineNode)onlineNode.textContent=entries.length.toLocaleString();
     if(downloadingNode)downloadingNode.textContent=active.toLocaleString();
    };
@@ -1397,9 +1397,9 @@ waitForThree(performance.now()+12000);
    doc.addEventListener("click",event=>{
     const anchor=event.target.closest&&event.target.closest("[data-live-download]");
     if(!anchor)return;
-    markActivity("downloading");
+    markActivity("download-click");
     clearTimeout(resetDownloadTimer);
-    resetDownloadTimer=setTimeout(()=>markActivity("browsing"),60000);
+    resetDownloadTimer=setTimeout(()=>markActivity("browsing"),90000);
    });
    doc.addEventListener("visibilitychange",()=>{if(!doc.hidden)markActivity("browsing")});
   }catch(error){
@@ -1409,7 +1409,7 @@ waitForThree(performance.now()+12000);
 
  const start=()=>{
   updateDownloadTotal();
-  window.setInterval(updateDownloadTotal,180000);
+  window.setInterval(updateDownloadTotal,300000);
   if(configured)connectPresence();
   else if(connectionNode)connectionNode.textContent="GitHub download totals are live. Add a Supabase URL and publishable key to activate live online/download activity.";
  };
