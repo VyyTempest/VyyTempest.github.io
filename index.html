@@ -768,41 +768,6 @@ footer nav a{font-size:.64rem}
 }
 @media(prefers-reduced-motion:reduce){#community-live .live-dot{animation:none}}
 
-/* Cinematic portal shutter for entering and returning from the dungeon. */
-#portal-transition{
- position:fixed;inset:0;z-index:110;pointer-events:none;visibility:hidden;
- display:grid;place-items:center
-}
-#portal-transition::before,#portal-transition::after{
- content:"";position:absolute;left:0;width:100%;height:51%;
- background:linear-gradient(180deg,#050705,#0c100b);
- transform:scaleY(0);transition:transform .42s cubic-bezier(.76,0,.18,1)
-}
-#portal-transition::before{top:0;transform-origin:top}
-#portal-transition::after{bottom:0;transform-origin:bottom}
-#portal-transition.is-active{visibility:visible}
-#portal-transition.is-active::before,#portal-transition.is-active::after{transform:scaleY(1)}
-#portal-transition.is-opening::before,#portal-transition.is-opening::after{transform:scaleY(0)}
-#portal-transition .portal-caption{
- position:relative;z-index:1;display:flex;flex-direction:column;
- align-items:center;gap:.65rem;text-align:center;opacity:0;
- transform:translateY(12px);
- transition:opacity .28s ease,transform .4s cubic-bezier(.2,.8,.2,1)
-}
-#portal-transition.show-caption .portal-caption{opacity:1;transform:none}
-#portal-transition .portal-caption strong{
- color:var(--ember-hot);font:800 clamp(2.2rem,7vw,5.2rem)/.9 var(--display);
- letter-spacing:.08em;text-transform:uppercase
-}
-#portal-transition .portal-caption small{
- color:#aaa99a;font:600 .63rem/1.4 var(--mono);
- letter-spacing:.22em;text-transform:uppercase
-}
-@media(prefers-reduced-motion:reduce){
- #portal-transition::before,#portal-transition::after{transition-duration:.12s}
- #portal-transition .portal-caption{transition-duration:.12s}
-}
-
 </style>
 </head>
 <body>
@@ -1281,67 +1246,66 @@ waitForThree(performance.now()+12000);
 <script id="cinema-live-presence">
 (()=>{
  const doc=document;
- const make=(tag,cls,text)=>{const n=doc.createElement(tag);if(cls)n.className=cls;if(text)n.textContent=text;return n};
+ const make=(tag,cls,text)=>{
+  const node=doc.createElement(tag);
+  if(cls)node.className=cls;
+  if(text)node.textContent=text;
+  return node;
+ };
 
- /* Activity panel is inserted after the hero actions built by the main page script. */
- const hero=doc.querySelector("#home .hero-copy");
- if(hero){
-  const strip=make("div","");strip.id="community-live";strip.setAttribute("aria-live","polite");
+ /* Put Live Activity below the download panel and installation steps. */
+ const updates=doc.querySelector("#updates .wide");
+ if(updates){
+  const strip=make("div","");
+  strip.id="community-live";
+  strip.setAttribute("aria-live","polite");
   const heading=make("span","live-heading");
   heading.append(make("i","live-dot"),make("span","","LIVE ACTIVITY"));
   const metric=(label,id)=>{
    const item=make("span","live-metric");
    item.append(make("span","",label+" "),make("strong","live-value","—"));
-   item.lastChild.id=id;return item;
+   item.lastChild.id=id;
+   return item;
   };
-  strip.append(heading,metric("ONLINE","live-online"),metric("DOWNLOAD CLICKS","live-downloading"),metric("TOTAL DOWNLOADS","live-total-downloads"));
-  const connection=make("span","live-connection","Download totals connect to GitHub; live presence needs a Realtime project.");
-  strip.append(connection);
-  const actions=hero.querySelector(".hero-actions");
-  if(actions)actions.after(strip);else hero.append(strip);
+  strip.append(heading,
+   metric("ONLINE","live-online"),
+   metric("DOWNLOAD CLICKS","live-downloading"),
+   metric("TOTAL DOWNLOADS","live-total-downloads")
+  );
+  strip.append(make("span","live-connection",
+   "Download totals use GitHub Releases. Live visitor presence needs a Realtime project."
+  ));
+  const steps=doc.getElementById("steps");
+  if(steps)steps.after(strip);
+  else updates.append(strip);
  }
 
- /* Portal shutter runs once when crossing the Home/dungeon boundary in either direction. */
- const gate=make("div","");gate.id="portal-transition";gate.setAttribute("aria-hidden","true");
- const caption=make("div","portal-caption");
- const title=make("strong","","DESCENDING");
- const subtitle=make("small","","THE GATE IS OPEN");
- caption.append(title,subtitle);gate.append(caption);doc.body.append(gate);
- let threshold=Math.max(220,Math.min(460,window.innerHeight*.42));
- let wasInside=window.scrollY>threshold,busy=false,timerA=0,timerB=0;
- const playTransition=entering=>{
-  if(busy)return;busy=true;
-  title.textContent=entering?"DESCENDING":"RETURNING TO THE SURFACE";
-  subtitle.textContent=entering?"THE GATE IS OPEN":"THE DUNGEON FADES BEHIND YOU";
-  gate.classList.remove("is-opening","show-caption","is-active");
-  void gate.offsetWidth;gate.classList.add("is-active");
-  requestAnimationFrame(()=>gate.classList.add("show-caption"));
-  clearTimeout(timerA);clearTimeout(timerB);
-  timerA=setTimeout(()=>gate.classList.add("is-opening"),520);
-  timerB=setTimeout(()=>{gate.classList.remove("is-active","show-caption","is-opening");busy=false},1150);
- };
- window.addEventListener("scroll",()=>{
-  const inside=window.scrollY>threshold;
-  if(inside!==wasInside){wasInside=inside;playTransition(inside)}
- },{passive:true});
- window.addEventListener("resize",()=>{threshold=Math.max(220,Math.min(460,window.innerHeight*.42))},{passive:true});
-
- /* Completed GitHub release downloads are aggregated and refreshed periodically. */
+ /* Aggregate completed download counts reported by GitHub Releases. */
  const totalNode=doc.getElementById("live-total-downloads");
  const connectionNode=doc.querySelector("#community-live .live-connection");
  const apiUrl="https://api.github.com/repos/VyyTempest/VyyTempest.github.io/releases?per_page=10";
  const cacheKey="ds-live-downloads-v1";
- const renderTotal=n=>{if(totalNode)totalNode.textContent=Number(n).toLocaleString()};
+ const renderTotal=value=>{if(totalNode)totalNode.textContent=Number(value).toLocaleString()};
  async function updateDownloadTotal(){
   try{
    const cached=JSON.parse(localStorage.getItem(cacheKey)||"null");
-   if(cached&&Date.now()-cached.at<300000){renderTotal(cached.total);return}
+   if(cached&&Date.now()-cached.at<300000){
+    renderTotal(cached.total);
+    return;
+   }
   }catch(error){}
   try{
-   const response=await fetch(apiUrl,{headers:{Accept:"application/vnd.github+json"},cache:"no-store"});
+   const response=await fetch(apiUrl,{
+    headers:{Accept:"application/vnd.github+json"},
+    cache:"no-store"
+   });
    if(!response.ok)throw new Error("GitHub release statistics unavailable");
    const releases=await response.json();
-   const total=releases.filter(r=>r&&!r.draft).reduce((sum,r)=>sum+(r.assets||[]).reduce((n,a)=>n+(Number(a.download_count)||0),0),0);
+   const total=releases.filter(release=>release&&!release.draft).reduce(
+    (sum,release)=>sum+(release.assets||[]).reduce(
+     (n,asset)=>n+(Number(asset.download_count)||0),0
+    ),0
+   );
    renderTotal(total);
    try{localStorage.setItem(cacheKey,JSON.stringify({at:Date.now(),total}))}catch(error){}
   }catch(error){
@@ -1349,69 +1313,86 @@ waitForThree(performance.now()+12000);
   }
  }
 
- /* Only a public Supabase URL and publishable/anon key belong in this public page.
-    Never place a service_role or other secret key in GitHub Pages. */
- const LIVE_CONFIG={supabaseUrl:"",publishableKey:""};
- const configured=/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(LIVE_CONFIG.supabaseUrl)&&LIVE_CONFIG.publishableKey.length>20;
+ /* Only the public Project URL and publishable key belong in this public page.
+    Never paste service_role or secret keys here. */
+ const LIVE_CONFIG={
+  supabaseUrl:"",
+  publishableKey:""
+ };
+ const configured=
+  /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(LIVE_CONFIG.supabaseUrl)&&
+  LIVE_CONFIG.publishableKey.length>20;
  const onlineNode=doc.getElementById("live-online");
  const downloadingNode=doc.getElementById("live-downloading");
  let presenceChannel=null,resetDownloadTimer=0;
-
  const markActivity=async mode=>{
   if(!presenceChannel)return;
   try{await presenceChannel.track({mode,updatedAt:Date.now()})}catch(error){}
  };
-
  async function connectPresence(){
   try{
-   const module=await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
-   const client=module.createClient(LIVE_CONFIG.supabaseUrl,LIVE_CONFIG.publishableKey,{
-    realtime:{params:{eventsPerSecond:3}}
-   });
-   const visitorKey=crypto.randomUUID?crypto.randomUUID():"visit-"+Math.random().toString(36).slice(2);
+   const supabaseModule=await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
+   const client=supabaseModule.createClient(
+    LIVE_CONFIG.supabaseUrl,
+    LIVE_CONFIG.publishableKey,
+    {realtime:{params:{eventsPerSecond:3}}}
+   );
+   const visitorKey=crypto.randomUUID?
+    crypto.randomUUID():
+    "visit-"+Math.random().toString(36).slice(2);
    presenceChannel=client.channel("dungeon-survivor-presence",{
     config:{presence:{key:visitorKey}}
    });
-
    const renderPresence=()=>{
     const entries=Object.values(presenceChannel.presenceState()).flat();
-    const active=entries.filter(p=>p&&p.mode==="download-click"&&Date.now()-Number(p.updatedAt||0)<65000).length;
+    const recentClicks=entries.filter(item=>
+     item&&item.mode==="download-click"&&
+     Date.now()-Number(item.updatedAt||0)<65000
+    ).length;
     if(onlineNode)onlineNode.textContent=entries.length.toLocaleString();
-    if(downloadingNode)downloadingNode.textContent=active.toLocaleString();
+    if(downloadingNode)downloadingNode.textContent=recentClicks.toLocaleString();
    };
    presenceChannel.on("presence",{event:"sync"},renderPresence);
    presenceChannel.on("presence",{event:"join"},renderPresence);
    presenceChannel.on("presence",{event:"leave"},renderPresence);
-
    presenceChannel.subscribe(async state=>{
     if(state==="SUBSCRIBED"){
      await markActivity("browsing");
      doc.getElementById("community-live")?.classList.add("is-connected");
-     if(connectionNode)connectionNode.textContent="Live presence connected. Counts are anonymous browser sessions.";
+     if(connectionNode){
+      connectionNode.textContent="Live presence connected. Counts are anonymous browser sessions.";
+     }
      renderPresence();
     }else if(state==="CHANNEL_ERROR"||state==="TIMED_OUT"){
-     if(connectionNode)connectionNode.textContent="Live presence interrupted. Reconnecting…";
+     if(connectionNode){
+      connectionNode.textContent="Live presence interrupted. Reconnecting…";
+     }
     }
    });
-
    doc.addEventListener("click",event=>{
-    const anchor=event.target.closest&&event.target.closest("[data-live-download]");
-    if(!anchor)return;
+    const download=event.target.closest&&event.target.closest("[data-live-download]");
+    if(!download)return;
     markActivity("download-click");
     clearTimeout(resetDownloadTimer);
     resetDownloadTimer=setTimeout(()=>markActivity("browsing"),90000);
    });
-   doc.addEventListener("visibilitychange",()=>{if(!doc.hidden)markActivity("browsing")});
+   doc.addEventListener("visibilitychange",()=>{
+    if(!doc.hidden)markActivity("browsing");
+   });
   }catch(error){
-   if(connectionNode)connectionNode.textContent="Live presence could not connect. Check the Realtime project configuration.";
+   if(connectionNode){
+    connectionNode.textContent="Live presence could not connect. Check the Realtime project configuration.";
+   }
   }
  }
-
  const start=()=>{
   updateDownloadTotal();
   window.setInterval(updateDownloadTotal,300000);
   if(configured)connectPresence();
-  else if(connectionNode)connectionNode.textContent="GitHub download totals are live. Add a Supabase URL and publishable key to activate live online/download activity.";
+  else if(connectionNode){
+   connectionNode.textContent=
+    "GitHub download totals are live. Add a Supabase URL and publishable key to activate live visitor presence.";
+  }
  };
  if("requestIdleCallback" in window)requestIdleCallback(start,{timeout:1800});
  else setTimeout(start,650);
